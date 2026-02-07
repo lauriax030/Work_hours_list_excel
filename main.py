@@ -2,6 +2,22 @@ from openpyxl import Workbook
 from openpyxl.styles import Font, Alignment
 from openpyxl.worksheet.table import Table, TableStyleInfo
 import os
+#import objektai
+
+MONTHS = ["Sausis", "Vasaris", "Kovas", "Balandis", "Gegužė", "Birželis", "Liepa", "Rugpjūtis", "Rugsėjis", "Spalis", "Lapkritis", "Gruodis",]
+
+def get_month():
+    while True:
+        m = input("   Mėnesį: ").strip().lower()
+        if m.isdigit():
+            i = int(m)
+            if 1 <= i <= 12:
+                return MONTHS[i - 1]
+        if len(m) >= 4:
+            for month in MONTHS:
+                if month.lower().startswith(m[:4]):
+                    return month
+        print("Netinkamas mėnuo. Pvz: 8, 08, rugpjutis, Rugpjūtis")
 
 def setup_console():
     os.system("title Darbo ataskaitos įrankis")
@@ -9,7 +25,7 @@ def setup_console():
 
 def setup():
     year = int(input(" Įveskite datą:\n   Metus:"))
-    month = input("   Mėnesį (žodžiais): ")
+    month = get_month()
     name = input("   Serviso inžinieriaus v. pavardė (pvz.: Antano Antanausko): ")
     return year, month, name
 
@@ -90,9 +106,13 @@ def data_list():
             break
 
     return all_data
-setup_console()
-year, month, name = setup()
-records = data_list()
-create_excel(year, month, name, records)
 
-input("Spausti ENTER, kad uždaryti...")
+def main():
+    setup_console()
+    year, month, name = setup()
+    records = data_list()
+    create_excel(year, month, name, records)
+    input("Spausti ENTER, kad uždaryti...")
+
+if __name__ == "__main__":
+    main()
