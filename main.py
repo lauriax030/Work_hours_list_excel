@@ -3,7 +3,6 @@ from openpyxl.styles import Font, Alignment
 from openpyxl.worksheet.table import Table, TableStyleInfo
 import os
 import calendar
-#import objektai
 
 MONTHS = ["Sausis", "Vasaris", "Kovas", "Balandis", "Gegužė", "Birželis", "Liepa", "Rugpjūtis", "Rugsėjis", "Spalis", "Lapkritis", "Gruodis",]
 
@@ -57,6 +56,31 @@ def input_hours(prompt):
         except ValueError:
             print("Netinkamas formatas! Įveskite skaičių, pvz.: 3.5")
 
+def load_objects(filename="objektai.txt"):
+    if not os.path.exists(filename):
+        return []
+    with open(filename, "r", encoding="utf-8") as f:
+        # Strip empty lines and trailing spaces
+        return [line.strip() for line in f if line.strip()]
+    
+def input_object(objects):
+    min_chars = 5
+    while True:
+        inp = input(f"Objekto pavadinimas (pirmi {min_chars} simboliai): ").strip()
+        if len(inp) < min_chars:
+            print(f"Įveskite bent {min_chars} simbolius")
+            continue
+        
+        matches = [obj for obj in objects if obj.lower().startswith(inp.lower())]
+        if len(matches) == 1:
+            return matches[0]
+        elif len(matches) > 1:
+            print("Rasta keli objektai: " + ", ".join(matches[:5]) + (", ..." if len(matches) > 5 else ""))
+            min_chars = len(inp) + 1
+            print(f"Įveskite daugiau simbolių, kad būtų unikalus: (dabar reikia bent {min_chars})")
+        else:
+            print("Objektas nerastas, bandykite dar kartą.")
+
 def setup_console():
     os.system("title Darbo ataskaitos įrankis")
     os.system("color 8F")
@@ -77,7 +101,6 @@ def summarize_records(records):
         summary[key]["Kelionės laikas"] += row["Kelionės laikas"]
         summary[key]["Viršvalandžiai"] += row.get("Viršvalandžiai")
     return summary
-
 
 def append_summary_table(ws, summary):
     ws.append([])
@@ -111,9 +134,11 @@ def append_summary_table(ws, summary):
     for row in ws.iter_rows(min_row=start_row+1, min_col=3, max_col=4, max_row=end_row):
         for cell in row:
             cell.number_format = '0.0'
+            cell.alignment = Alignment(horizontal="left")
     for row in ws.iter_rows(min_row=start_row+1, min_col=6, max_col=6, max_row=end_row):
         for cell in row:
             cell.number_format = '0.0'
+            cell.alignment = Alignment(horizontal="left")
 
 def create_excel(year, month, name, records):
     wb = Workbook()
@@ -163,6 +188,10 @@ def create_excel(year, month, name, records):
     table.tableStyleInfo = style
     ws.add_table(table)
 
+    for row in ws.iter_rows(min_row=6, max_row=ws.max_row, min_col=1, max_col=6):
+        for cell in row:
+            cell.alignment = Alignment(horizontal="left")
+
     ws.column_dimensions["A"].width = 8
     ws.column_dimensions["B"].width = 30
     ws.column_dimensions["C"].width = 20
@@ -184,7 +213,8 @@ def data_list(year, month):
     while True:
         data = {}
         data["Diena"] = input_day(year, month)
-        data["Objektas"] = input("Objekto pavadinimas: ").strip()
+        objects_list = load_objects("objektai.txt")
+        data["Objektas"] = input_object(objects_list)
         data["Pradirbtos valandos"] = input_hours("Pradirbtos valandos")
         data["Kelionės laikas"] = input_hours("Kelionės laikas")
         data["Viršvalandžiai"] = input_hours("Viršvalandžiai")
