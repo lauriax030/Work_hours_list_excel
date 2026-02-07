@@ -1,0 +1,7 @@
+altgraph==0.17.5
+et_xmlfile==2.0.0
+openpyxl==3.1.5
+packaging==26.0
+pyinstaller==6.18.0
+pyinstaller-hooks-contrib==2026.0
+setuptools==81.0.0
