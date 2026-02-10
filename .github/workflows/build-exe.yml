@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write   # <- allows creating releases and uploading assets
+  contents: write
 
 jobs:
   build:
@@ -30,9 +30,10 @@ jobs:
         run: |
           pyinstaller --onefile --name WorkHours main.py
 
-      - name: Upload Release Asset
-        uses: softprops/action-gh-release@v2
-        with:
-          files: dist/WorkHours.exe
+      - name: Install GitHub CLI
+        run: |
+          winget install --id GitHub.cli -e --source winget
+
+      - name: Create GitHub Release
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # <- make sure this is present
+          GH_TOKEN: ${{ secre_
