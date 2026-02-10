@@ -91,36 +91,45 @@ def setup():
     name = input("   Serviso inžinieriaus v. pavardė (pvz.: Antano Antanausko): ")
     return year, month, name
 
-def summarize_records(records):
-    summary = {}
-    for row in records:
-        key = (row["Objektas"], row["Darbo tipas"])
-        if key not in summary:
-            summary[key] = {"Pradirbtos valandos": 0, "Kelionės laikas": 0, "Viršvalandžiai": 0}
-        summary[key]["Pradirbtos valandos"] += row["Pradirbtos valandos"]
-        summary[key]["Kelionės laikas"] += row["Kelionės laikas"]
-        summary[key]["Viršvalandžiai"] += row.get("Viršvalandžiai")
-    return summary
+def unique_object_worktypes(records):
+    seen = set()
+    result = []
+    for r in records:
+        key = (r["Darbo tipas"], r["Objektas"])
+        if key not in seen:
+            seen.add(key)
+            result.append(key)
+    return result
 
-def append_summary_table(ws, summary):
+def append_summary_table(ws, records):
     ws.append([])
     ws.append([])
     ws.append([])
+
     ws.append([
-        "Darbo tipas", "Objektas", "Pradirbtos valandos",
-        "Kelionės laikas", "AX S.C.", "Viršvalandžiai"
+        "Darbo tipas",
+        "Objektas",
+        "Pradirbtos valandos",
+        "Kelionės laikas",
+        "AX S.C.",
+        "Viršvalandžiai"
     ])
-    
+
     start_row = ws.max_row
-    for (obj, work_type), totals in summary.items():
+    combos = unique_object_worktypes(records)
+
+    for work_type, obj in combos:
+        row = ws.max_row + 1
+
         ws.append([
             work_type,
             obj,
-            totals["Pradirbtos valandos"],
-            totals["Kelionės laikas"],
+            f'=SUMIFS(Ataskaita[Pradirbtos valandos], Ataskaita[Objektas], B{row}, Ataskaita[Darbo tipas (S - šefmontažas, G - garantinis remontas, SP - serviso projektas, V - vizitas, 0 - nei vienas)], A{row})',
+            f'=SUMIFS(Ataskaita[Kelionės laikas], Ataskaita[Objektas], B{row}, Ataskaita[Darbo tipas (S - šefmontažas, G - garantinis remontas, SP - serviso projektas, V - vizitas, 0 - nei vienas)], A{row})',
             "",
-            totals["Viršvalandžiai"]
+            f'=SUMIFS(Ataskaita[Viršvalandžiai], Ataskaita[Objektas], B{row}, Ataskaita[Darbo tipas (S - šefmontažas, G - garantinis remontas, SP - serviso projektas, V - vizitas, 0 - nei vienas)], A{row})',
         ])
+
     end_row = ws.max_row
 
     table = Table(displayName="Summary", ref=f"A{start_row}:F{end_row}")
@@ -131,14 +140,10 @@ def append_summary_table(ws, summary):
     table.tableStyleInfo = style
     ws.add_table(table)
 
-    for row in ws.iter_rows(min_row=start_row+1, min_col=3, max_col=4, max_row=end_row):
-        for cell in row:
-            cell.number_format = '0.0'
-            cell.alignment = Alignment(horizontal="left")
-    for row in ws.iter_rows(min_row=start_row+1, min_col=6, max_col=6, max_row=end_row):
-        for cell in row:
-            cell.number_format = '0.0'
-            cell.alignment = Alignment(horizontal="left")
+    for col in ("C", "D", "F"):
+        for cell in ws[f"{col}{start_row+1}:{col}{end_row}"]:
+            cell[0].number_format = "0.0"
+            cell[0].alignment = Alignment(horizontal="left")
 
 def create_excel(year, month, name, records):
     wb = Workbook()
@@ -199,9 +204,7 @@ def create_excel(year, month, name, records):
     ws.column_dimensions["E"].width = 15
     ws.column_dimensions["F"].width = 30
 
-    summary = summarize_records(records)
-    append_summary_table(ws, summary)
-
+    append_summary_table(ws, records)
 
     filename = f"Neaktuotos_valandos_{year}_{month}.xlsx"
     wb.save(filename)
