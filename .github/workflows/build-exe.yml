@@ -6,6 +6,9 @@ on:
       - "v*"
   workflow_dispatch:
 
+permissions:
+  contents: write   # <- allows creating releases and uploading assets
+
 jobs:
   build:
     runs-on: windows-latest
@@ -31,3 +34,5 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           files: dist/WorkHours.exe
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # <- make sure this is present
