@@ -4,7 +4,7 @@ name: Build and Release EXE
 on:
   push:
     tags:
-      - 'v*'   # Trigger only on version tags like v1.0.0
+      - 'v*'  
   workflow_dispatch:
 
 jobs:
